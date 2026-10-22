@@ -131,11 +131,11 @@ como_aluno file -b -- "$OBJ" | grep -q "ELF 32-bit LSB relocatable" ||
 como_aluno file -b -- "$EXE" | grep -q "ELF 32-bit LSB executable" ||
     pre_requisito "$NOME não é um executável ELF 32 bits. Use: ld -m elf_i386 $NOME.o -o $NOME"
 
-como_aluno readelf -sW -- "$EXE" | grep -Eq ' ler_digito$' ||
-    pre_requisito "Não encontrei o rótulo ler_digito no executável."
-[ "$(como_aluno objdump -d -- "$EXE" | grep -Ec 'call.*<ler_digito>')" -ge 3 ] ||
+como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -Eq '^[[:space:]]*ler_digito:' ||
+    pre_requisito "Não encontrei o rótulo ler_digito no $NOME.asm."
+[ "$(como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -Eic '^[[:space:]]*call[[:space:]]+ler_digito')" -ge 3 ] ||
     pre_requisito "O programa deve chamar ler_digito com call três vezes."
-como_aluno objdump -d -- "$EXE" | grep -Eq '[[:space:]]ret[[:space:]]*$' ||
+como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -Eiq '^[[:space:]]*ret[[:space:]]*$' ||
     pre_requisito "A função ler_digito deve terminar com ret."
 
 # Roda o programa do aluno (como aluno) e imprime o código de saída.

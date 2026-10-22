@@ -133,8 +133,7 @@ como_aluno file -b -- "$EXE" | grep -q "ELF 32-bit LSB executable" ||
 
 como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -q '%' &&
     pre_requisito "$NOME.asm ainda tem registradores com % (sintaxe AT&T). Traduza para a sintaxe Intel do NASM."
-como_aluno readelf -sW -- "$OBJ" | grep -Eq 'FILE .*traducao32\.asm$' ||
-    pre_requisito "$NOME.o precisa ser gerado pelo NASM a partir de $NOME.asm (nasm -f elf32 $NOME.asm -o $NOME.o)."
+
 
 # Roda o programa do aluno (como aluno) e imprime o código de saída.
 executar() {

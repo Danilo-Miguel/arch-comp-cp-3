@@ -53,5 +53,5 @@ echo $?
 /challenge/check
 ```
 
-O `check` confere se existe o rótulo `ler_digito`, se ele é chamado com `call`
-três vezes e se há `ret`, e então roda o programa com dígitos **sorteados**.
+O `check` confere no seu `.asm` se existe o rótulo `ler_digito`, se ele é
+chamado com `call` três vezes e se há `ret`, e então roda o programa com dígitos **sorteados**.

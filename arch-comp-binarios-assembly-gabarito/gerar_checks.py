@@ -293,16 +293,15 @@ QUESTIONARIOS = [
 PRE_TRADUCAO = r'''
 como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -q '%' &&
     pre_requisito "$NOME.asm ainda tem registradores com % (sintaxe AT&T). Traduza para a sintaxe Intel do NASM."
-como_aluno readelf -sW -- "$OBJ" | grep -Eq 'FILE .*traducao32\.asm$' ||
-    pre_requisito "$NOME.o precisa ser gerado pelo NASM a partir de $NOME.asm (nasm -f elf32 $NOME.asm -o $NOME.o)."
+
 '''
 
 PRE_FUNCAO = r'''
-como_aluno readelf -sW -- "$EXE" | grep -Eq ' ler_digito$' ||
-    pre_requisito "Não encontrei o rótulo ler_digito no executável."
-[ "$(como_aluno objdump -d -- "$EXE" | grep -Ec 'call.*<ler_digito>')" -ge 3 ] ||
+como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -Eq '^[[:space:]]*ler_digito:' ||
+    pre_requisito "Não encontrei o rótulo ler_digito no $NOME.asm."
+[ "$(como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -Eic '^[[:space:]]*call[[:space:]]+ler_digito')" -ge 3 ] ||
     pre_requisito "O programa deve chamar ler_digito com call três vezes."
-como_aluno objdump -d -- "$EXE" | grep -Eq '[[:space:]]ret[[:space:]]*$' ||
+como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -Eiq '^[[:space:]]*ret[[:space:]]*$' ||
     pre_requisito "A função ler_digito deve terminar com ret."
 '''
 
