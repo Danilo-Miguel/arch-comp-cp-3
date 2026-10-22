@@ -9,7 +9,7 @@ Uso: python3 gerar_checks.py
 import hashlib
 from pathlib import Path
 
-DOJO = Path(__file__).resolve().parent.parent / "arch-comp-binarios-assembly"
+DOJO = Path(__file__).resolve().parent.parent
 
 # --------------------------------------------------------------------------
 # Motor comum: controle de tentativas (1 erro permitido, 2º erro invalida)

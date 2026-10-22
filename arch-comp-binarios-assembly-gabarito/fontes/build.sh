@@ -2,7 +2,7 @@
 # Gera os binários usados nos exercícios 1 a 5 e copia para o dojo.
 set -e
 cd "$(dirname "$0")"
-DOJO=../../arch-comp-binarios-assembly
+DOJO=../..
 
 nasm -f bin programa.asm -o programa.exe
 nasm -f elf32 alvo.asm -o alvo.o
