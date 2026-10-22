@@ -1,0 +1,4 @@
+name: "Introdução ao Assembly x86 - Exercício 8"
+challenges:
+  - id: asm-maior
+    name: "cmp e saltos condicionais (x86, 32 bits)"

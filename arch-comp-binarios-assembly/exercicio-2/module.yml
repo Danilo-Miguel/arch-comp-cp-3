@@ -1,0 +1,4 @@
+name: "Binários Windows - Exercício 2"
+challenges:
+  - id: pe-secoes-importacao
+    name: "Seções e tabela de importação do PE"

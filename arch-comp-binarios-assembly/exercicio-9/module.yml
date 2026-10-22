@@ -1,0 +1,4 @@
+name: "Introdução ao Assembly x86 - Exercício 9"
+challenges:
+  - id: asm-traducao
+    name: "Sintaxe Intel vs AT&T (x86, 32 bits)"

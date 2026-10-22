@@ -1,0 +1,19 @@
+id: binarios-assembly
+name: "Estrutura de Binários (PE e ELF) e Introdução ao Assembly x86 - Computer Architecture"
+type: example
+award:
+  emoji: 🧩
+image: pwncollege/challenge-simple
+# Sem modo privilegiado (practice): com sudo o aluno apagaria o registro de tentativas.
+allow_privileged: false
+modules:
+  - id: exercicio-1
+  - id: exercicio-2
+  - id: exercicio-3
+  - id: exercicio-4
+  - id: exercicio-5
+  - id: exercicio-6
+  - id: exercicio-7
+  - id: exercicio-8
+  - id: exercicio-9
+  - id: exercicio-10

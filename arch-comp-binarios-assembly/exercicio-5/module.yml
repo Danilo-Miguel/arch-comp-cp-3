@@ -1,0 +1,4 @@
+name: "Binários Linux - Exercício 5"
+challenges:
+  - id: elf-simbolos-relocacao
+    name: "Símbolos e tabela de relocação do ELF"

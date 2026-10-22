@@ -1,0 +1,175 @@
+#!/usr/bin/exec-suid -- /bin/bash -p
+# Exercício 2: Seções e tabela de importação do PE
+#
+# Regra de tentativas: o aluno pode errar UMA vez. No segundo erro o exercício
+# fica INVALIDADO e este check nunca mais libera a flag. Arquivo ausente,
+# programa não montado/ligado ou resposta fora do formato NÃO contam como erro.
+# O registro fica em /home/hacker/.tentativas, uma pasta do root: o aluno não
+# consegue apagá-la nem alterar seu conteúdo (o dojo usa allow_privileged: false).
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+trap '' INT QUIT TSTP HUP
+
+DESAFIO="pe-secoes-importacao"
+ALUNO="hacker"
+HOME_ALUNO="/home/hacker"
+ESTADO_DIR="$HOME_ALUNO/.tentativas"
+ESTADO_MARCA=".registro-tentativas"
+MAX_ERROS=2
+
+falha_interna() {
+    echo "Erro interno do check ($1). Avise o professor."
+    exit 2
+}
+
+# Tudo que mexe em arquivos do aluno roda com o usuário dele, nunca como root.
+como_aluno() {
+    setpriv --reuid="$UID_ALUNO" --regid="$GID_ALUNO" --clear-groups -- "$@"
+}
+
+dono_root() {
+    [ -d "$1" ] && [ ! -L "$1" ] && [ "$(stat -c %u -- "$1")" = 0 ]
+}
+
+abrir_registro() {
+    command -v setpriv >/dev/null || falha_interna "setpriv ausente"
+    UID_ALUNO=$(id -u "$ALUNO") || falha_interna "usuario"
+    GID_ALUNO=$(id -g "$ALUNO") || falha_interna "grupo"
+
+    # Algo que não seja a pasta do root com esse nome foi criado pelo aluno.
+    if [ -e "$ESTADO_DIR" ] || [ -L "$ESTADO_DIR" ]; then
+        dono_root "$ESTADO_DIR" || mv -- "$ESTADO_DIR" "$ESTADO_DIR.descartado.$$" || falha_interna "mv"
+    fi
+
+    # O aluno não apaga a pasta do root, mas pode renomeá-la dentro do home.
+    if [ ! -e "$ESTADO_DIR" ]; then
+        local d
+        while IFS= read -r -d '' d; do
+            if [ -f "$d/$ESTADO_MARCA" ]; then
+                mv -- "$d" "$ESTADO_DIR" || falha_interna "mv"
+                break
+            fi
+        done < <(find "$HOME_ALUNO" -mindepth 1 -maxdepth 1 -type d -user root -print0)
+    fi
+
+    if [ ! -e "$ESTADO_DIR" ]; then
+        mkdir -m 700 -- "$ESTADO_DIR" || falha_interna "mkdir"
+        chown 0:0 -- "$ESTADO_DIR"
+        : > "$ESTADO_DIR/$ESTADO_MARCA"
+    fi
+
+    cd -P -- "$ESTADO_DIR" || falha_interna "cd"
+    [ "$(stat -c %u .)" = 0 ] && [ -f "$ESTADO_MARCA" ] || falha_interna "registro"
+
+    local situacao
+    situacao=$(cat -- "./$DESAFIO" 2>/dev/null)
+    case "$situacao" in
+        aprovado)
+            echo "Você já concluiu este exercício. Flag:"
+            cat /flag
+            exit 0
+            ;;
+        invalido)
+            echo "EXERCÍCIO INVALIDADO: você já errou $MAX_ERROS vezes."
+            echo "A flag deste exercício não será mais liberada."
+            exit 1
+            ;;
+        erros=[0-9]*) ERROS=${situacao#erros=} ;;
+        *) ERROS=0 ;;
+    esac
+}
+
+aprovar() {
+    echo aprovado > "./$DESAFIO" || falha_interna "gravar"
+    echo "Correto! Flag:"
+    cat /flag
+    exit 0
+}
+
+# $@ = linhas de detalhe, mostradas só depois que o erro já foi gravado.
+reprovar() {
+    local erros=$((ERROS + 1))
+    if [ "$erros" -ge "$MAX_ERROS" ]; then
+        echo invalido > "./$DESAFIO" || falha_interna "gravar"
+    else
+        echo "erros=$erros" > "./$DESAFIO" || falha_interna "gravar"
+    fi
+    echo "Resposta incorreta."
+    printf '%s\n' "$@"
+    echo
+    if [ "$erros" -ge "$MAX_ERROS" ]; then
+        echo "EXERCÍCIO INVALIDADO: este foi o seu erro número $erros."
+        echo "A flag deste exercício não será mais liberada."
+    else
+        echo "ATENÇÃO: você tem só MAIS UMA tentativa."
+        echo "Um novo erro invalida este exercício. Revise com calma antes de rodar o check de novo."
+    fi
+    exit 1
+}
+
+abrir_registro
+
+RESP="$HOME_ALUNO/exercicio2.txt"
+ESPERADO_SHA256="419f9ae5b88204884546b76e263b45528bc2d6ba3fd2ba579cc9b54c1c3a2eab"
+# Uma linha por item: "descrição|regex do formato".
+ITENS=(
+    "quantidade de seções (decimal)|^[0-9]+$"
+    "nome da seção que contém o código executável|^\.[a-z0-9_]+$"
+    "nome da DLL importada (com .dll)|^[a-z0-9_]+\.dll$"
+    "função importada que encerra o processo|^[a-z0-9_]+$"
+)
+
+# minúsculas, sem espaços, sem linhas vazias, hexadecimal sem zeros à esquerda
+normalizar() {
+    tr -d '\r' | tr '[:upper:]' '[:lower:]' | tr -d ' \t' | sed '/^$/d' |
+    while IFS= read -r l || [ -n "$l" ]; do
+        if [[ $l =~ ^0x[0-9a-f]{1,8}$ ]]; then
+            printf '0x%x\n' "$((l))"
+        else
+            printf '%s\n' "$l"
+        fi
+    done
+}
+
+mostrar_formato() {
+    local i
+    echo "Formato esperado em $RESP (${#ITENS[@]} linhas):"
+    for i in "${!ITENS[@]}"; do
+        echo "  linha $((i + 1)): ${ITENS[$i]%%|*}"
+    done
+}
+
+if ! como_aluno test -f "$RESP"; then
+    echo "Arquivo $RESP não encontrado (isso não conta como tentativa)."
+    mostrar_formato
+    exit 1
+fi
+
+CONTEUDO=$(como_aluno head -c 4096 -- "$RESP") || falha_interna "leitura"
+NORMAL=$(printf '%s\n' "$CONTEUDO" | normalizar)
+LINHAS=()
+[ -n "$NORMAL" ] && mapfile -t LINHAS <<< "$NORMAL"
+
+if [ "${#LINHAS[@]}" -ne "${#ITENS[@]}" ]; then
+    echo "O arquivo tem ${#LINHAS[@]} linha(s) preenchida(s), mas deveria ter ${#ITENS[@]}."
+    echo "(Erro de formato, não conta como tentativa.)"
+    mostrar_formato
+    exit 1
+fi
+
+for i in "${!ITENS[@]}"; do
+    if ! [[ ${LINHAS[$i]} =~ ${ITENS[$i]#*|} ]]; then
+        echo "Linha $((i + 1)) fora do formato: '${LINHAS[$i]}'"
+        echo "(Erro de formato, não conta como tentativa.)"
+        mostrar_formato
+        exit 1
+    fi
+done
+
+HASH=$(printf '%s\n%s' "$DESAFIO" "$NORMAL" | sha256sum | cut -d' ' -f1)
+
+if [ "$HASH" = "$ESPERADO_SHA256" ]; then
+    aprovar
+else
+    reprovar "Pelo menos uma das ${#ITENS[@]} linhas está errada."
+fi
