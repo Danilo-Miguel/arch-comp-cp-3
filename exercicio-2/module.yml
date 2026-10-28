@@ -1,4 +1,4 @@
 name: "Binários Windows - Exercício 2"
 challenges:
-  - id: pe-secoes-entry-point
-    name: "Seções, importações e entry point do PE"
+  - id: pe-entry-point
+    name: "Entry point de um executável do Windows (PE)"

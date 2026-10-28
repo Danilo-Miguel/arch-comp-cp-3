@@ -1,4 +1,4 @@
 name: "Binários Linux - Exercício 3"
 challenges:
-  - id: elf-cabecalho-segmentos
-    name: "Formato ELF: cabeçalho, seções e segmentos"
+  - id: elf-cabecalho
+    name: "Reconhecendo um executável do Linux (ELF)"

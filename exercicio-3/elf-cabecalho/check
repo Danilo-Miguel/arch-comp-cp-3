@@ -1,5 +1,5 @@
 #!/usr/bin/exec-suid -- /bin/bash -p
-# Exercício 2: Seções, importações e entry point do PE
+# Exercício 3: Reconhecendo um executável do Linux (ELF)
 #
 # Regra de tentativas: o aluno pode errar UMA vez. No segundo erro o exercício
 # fica INVALIDADO e este check nunca mais libera a flag. Arquivo ausente,
@@ -10,7 +10,7 @@
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 trap '' INT QUIT TSTP HUP
 
-DESAFIO="pe-secoes-entry-point"
+DESAFIO="elf-cabecalho"
 ALUNO="hacker"
 HOME_ALUNO="/home/hacker"
 ESTADO_DIR="$HOME_ALUNO/.tentativas"
@@ -109,15 +109,12 @@ reprovar() {
 
 abrir_registro
 
-RESP="$HOME_ALUNO/exercicio2.txt"
-ESPERADO_SHA256="1f426b989f6dc50a94c530f70057130bc030df9ab2c9a685378df8f468304a4d"
+RESP="$HOME_ALUNO/exercicio3.txt"
+ESPERADO_SHA256="ef9ec37d171a9bf54d310e5969389e2b98385c84368ee43b04d274aa3120d9ac"
 # Uma linha por item: "descrição|regex do formato".
 ITENS=(
-    "quantidade de seções (decimal)|^[0-9]+$"
-    "nome da DLL importada (com .dll)|^[a-z0-9_]+\.dll$"
-    "ImageBase (hexadecimal com 0x)|^0x[0-9a-f]+$"
-    "AddressOfEntryPoint, a RVA do entry point (hexadecimal com 0x)|^0x[0-9a-f]+$"
-    "endereço virtual (VA) do entry point na memória (hexadecimal com 0x)|^0x[0-9a-f]+$"
+    "classe: ELF32 ou ELF64|^elf(32|64)$"
+    "endereço do entry point, em hexadecimal com 0x|^0x[0-9a-f]+$"
 )
 
 # minúsculas, sem espaços, sem linhas vazias, hexadecimal sem zeros à esquerda

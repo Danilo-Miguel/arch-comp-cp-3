@@ -1,39 +1,44 @@
-<h2 align="center">Formato PE: cabeçalho DOS e assinatura PE</h2>
+<h2 align="center">Reconhecendo um executável do Windows (PE)</h2>
 
 > **Atenção: você só pode errar UMA vez.** No segundo erro o exercício fica
 > **invalidado** e a flag não é mais liberada. Arquivo ausente ou fora do
 > formato não conta como tentativa, mas resposta errada conta. Confira tudo
 > antes de rodar o `check`.
 
-O arquivo `/challenge/programa.exe` é um executável de **Windows** no formato
-**PE (Portable Executable)**. Mesmo sem Windows, dá para inspecioná-lo no Linux.
+O arquivo `/challenge/programa.exe` é um executável de **Windows**, no formato
+**PE (Portable Executable)**. Dá para reconhecer um PE mesmo no Linux, sem
+executá-lo:
 
-Todo PE começa com um **cabeçalho DOS** de 64 bytes. Os 2 primeiros bytes são
-a assinatura em ASCII, e o campo `e_lfanew`, no offset `0x3C`, guarda (em 4
-bytes *little-endian*) o offset onde começa o **cabeçalho PE** (`PE\0\0`).
+- todo PE começa com as letras **`MZ`** (a "assinatura" do arquivo);
+- o comando `file` identifica o formato sozinho.
 
 ## 1. Investigue
 
 ```bash
+head -c 2 /challenge/programa.exe; echo
 file /challenge/programa.exe
-objdump -f /challenge/programa.exe
-od -A x -t x1z -N 128 /challenge/programa.exe
 ```
 
-No `od`, a coluna da esquerda é o offset em hexadecimal e cada linha mostra 16
-bytes. Ache o byte do offset `0x3C` e leia os 4 bytes a partir dele (o primeiro
-é o menos significativo). Confirme que nesse offset aparece `PE`.
+O `head -c 2` mostra os 2 primeiros caracteres do arquivo. O `file` diz se ele
+é `PE32` (32 bits) ou `PE32+` (64 bits).
 
 ## 2. Responda
 
-Crie o arquivo `/home/hacker/exercicio1.txt` com **4 linhas**:
+Crie o arquivo de resposta com um editor de texto. Sugestão: o **nano**.
+
+```bash
+nano ~/exercicio1.txt
+```
+
+Escreva **2 linhas**:
 
 ```
-assinatura do cabeçalho DOS (2 letras)
-offset do cabeçalho PE (e_lfanew), em hexadecimal com 0x
+os 2 primeiros caracteres do arquivo
 formato: PE32 ou PE32+
-arquitetura, como o objdump -f mostra
 ```
+
+Para salvar no nano: `Ctrl+O` e depois `Enter`. Para sair: `Ctrl+X`.
+Confira o que ficou salvo com `cat ~/exercicio1.txt`.
 
 ## 3. Confira
 

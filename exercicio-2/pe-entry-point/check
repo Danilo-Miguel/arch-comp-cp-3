@@ -1,5 +1,5 @@
 #!/usr/bin/exec-suid -- /bin/bash -p
-# Exercício 3: Formato ELF, cabeçalho, seções e segmentos
+# Exercício 2: Entry point de um executável do Windows (PE)
 #
 # Regra de tentativas: o aluno pode errar UMA vez. No segundo erro o exercício
 # fica INVALIDADO e este check nunca mais libera a flag. Arquivo ausente,
@@ -10,7 +10,7 @@
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 trap '' INT QUIT TSTP HUP
 
-DESAFIO="elf-cabecalho-segmentos"
+DESAFIO="pe-entry-point"
 ALUNO="hacker"
 HOME_ALUNO="/home/hacker"
 ESTADO_DIR="$HOME_ALUNO/.tentativas"
@@ -109,15 +109,11 @@ reprovar() {
 
 abrir_registro
 
-RESP="$HOME_ALUNO/exercicio3.txt"
-ESPERADO_SHA256="fd727fad817c6b2f1952097c3bdfcd55a05af1c8958aae80a24f4fdac014a6fa"
+RESP="$HOME_ALUNO/exercicio2.txt"
+ESPERADO_SHA256="b699f747ec564a8f1065b4642d42a3ff5cff12b9053229961705d38d79af2f76"
 # Uma linha por item: "descrição|regex do formato".
 ITENS=(
-    "classe: ELF32 ou ELF64|^elf(32|64)$"
-    "tipo do arquivo (campo Type, só a sigla: EXEC, DYN ou REL)|^[a-z]+$"
-    "endereço do entry point (hexadecimal com 0x)|^0x[0-9a-f]+$"
-    "quantidade de section headers (decimal)|^[0-9]+$"
-    "quantidade de segmentos do tipo LOAD (decimal)|^[0-9]+$"
+    "endereço do entry point (start address), em hexadecimal com 0x|^0x[0-9a-f]+$"
 )
 
 # minúsculas, sem espaços, sem linhas vazias, hexadecimal sem zeros à esquerda

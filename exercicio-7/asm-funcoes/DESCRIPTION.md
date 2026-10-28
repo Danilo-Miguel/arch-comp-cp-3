@@ -55,6 +55,18 @@ o programa (*segmentation fault*).
 
 **Sem acentos** (`Ciencia da Computacao`).
 
+## Crie o arquivo
+
+Escreva o código com um editor de texto. Sugestão: o **nano**.
+
+```bash
+cd ~
+nano funcoes32.asm
+```
+
+Para salvar: `Ctrl+O` e depois `Enter`. Para sair: `Ctrl+X`. Para continuar
+editando depois, é só rodar `nano funcoes32.asm` de novo.
+
 ## Monte, ligue e teste
 
 ```bash

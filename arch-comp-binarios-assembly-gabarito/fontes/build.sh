@@ -9,5 +9,5 @@ nasm -f elf32 alvo.asm -o alvo.o
 ld -m elf_i386 alvo.o -o alvo
 
 cp programa.exe "$DOJO"/exercicio-1/pe-cabecalho/
-cp programa.exe "$DOJO"/exercicio-2/pe-secoes-entry-point/
-cp alvo "$DOJO"/exercicio-3/elf-cabecalho-segmentos/
+cp programa.exe "$DOJO"/exercicio-2/pe-entry-point/
+cp alvo "$DOJO"/exercicio-3/elf-cabecalho/

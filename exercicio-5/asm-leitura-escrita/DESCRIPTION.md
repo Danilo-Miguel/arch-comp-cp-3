@@ -47,6 +47,18 @@ section .bss
 
 **Sem acentos**: escreva `Ola`, não `Olá`.
 
+## Crie o arquivo
+
+Escreva o código com um editor de texto. Sugestão: o **nano**.
+
+```bash
+cd ~
+nano nome32.asm
+```
+
+Para salvar: `Ctrl+O` e depois `Enter`. Para sair: `Ctrl+X`. Para continuar
+editando depois, é só rodar `nano nome32.asm` de novo.
+
 ## Monte, ligue e teste
 
 ```bash

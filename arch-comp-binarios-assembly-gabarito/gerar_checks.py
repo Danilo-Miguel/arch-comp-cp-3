@@ -296,27 +296,18 @@ def sha(desafio, respostas):
 # (pasta, desafio, título, arquivo, [(descrição, regex, resposta normalizada)])
 QUESTIONARIOS = [
     ("exercicio-1/pe-cabecalho", "pe-cabecalho",
-     "Exercício 1: Formato PE, cabeçalho DOS e assinatura PE", "exercicio1.txt", [
-         ("assinatura do cabeçalho DOS (2 letras ASCII)", r"^[a-z]{2}$", "mz"),
-         ("offset do cabeçalho PE, campo e_lfanew (hexadecimal com 0x)", r"^0x[0-9a-f]+$", "0x80"),
-         ("formato: PE32 ou PE32+", r"^pe32\+?$", "pe32"),
-         ("arquitetura informada pelo objdump -f", r"^[a-z0-9_-]+$", "i386"),
+     "Exercício 1: Reconhecendo um executável do Windows (PE)", "exercicio1.txt", [
+         ("os 2 primeiros caracteres do arquivo (2 letras)", r"^[a-z]{2}$", "mz"),
+         ("formato, como o comando file mostra: PE32 ou PE32+", r"^pe32\+?$", "pe32"),
      ]),
-    ("exercicio-2/pe-secoes-entry-point", "pe-secoes-entry-point",
-     "Exercício 2: Seções, importações e entry point do PE", "exercicio2.txt", [
-         ("quantidade de seções (decimal)", r"^[0-9]+$", "3"),
-         ("nome da DLL importada (com .dll)", r"^[a-z0-9_]+\.dll$", "kernel32.dll"),
-         ("ImageBase (hexadecimal com 0x)", r"^0x[0-9a-f]+$", "0x400000"),
-         ("AddressOfEntryPoint, a RVA do entry point (hexadecimal com 0x)", r"^0x[0-9a-f]+$", "0x1040"),
-         ("endereço virtual (VA) do entry point na memória (hexadecimal com 0x)", r"^0x[0-9a-f]+$", "0x401040"),
+    ("exercicio-2/pe-entry-point", "pe-entry-point",
+     "Exercício 2: Entry point de um executável do Windows (PE)", "exercicio2.txt", [
+         ("endereço do entry point (start address), em hexadecimal com 0x", r"^0x[0-9a-f]+$", "0x401040"),
      ]),
-    ("exercicio-3/elf-cabecalho-segmentos", "elf-cabecalho-segmentos",
-     "Exercício 3: Formato ELF, cabeçalho, seções e segmentos", "exercicio3.txt", [
+    ("exercicio-3/elf-cabecalho", "elf-cabecalho",
+     "Exercício 3: Reconhecendo um executável do Linux (ELF)", "exercicio3.txt", [
          ("classe: ELF32 ou ELF64", r"^elf(32|64)$", "elf32"),
-         ("tipo do arquivo (campo Type, só a sigla: EXEC, DYN ou REL)", r"^[a-z]+$", "exec"),
-         ("endereço do entry point (hexadecimal com 0x)", r"^0x[0-9a-f]+$", "0x8049000"),
-         ("quantidade de section headers (decimal)", r"^[0-9]+$", "7"),
-         ("quantidade de segmentos do tipo LOAD (decimal)", r"^[0-9]+$", "3"),
+         ("endereço do entry point, em hexadecimal com 0x", r"^0x[0-9a-f]+$", "0x8049000"),
      ]),
 ]
 

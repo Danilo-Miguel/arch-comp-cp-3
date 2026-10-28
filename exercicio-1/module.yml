@@ -1,4 +1,4 @@
 name: "Binários Windows - Exercício 1"
 challenges:
   - id: pe-cabecalho
-    name: "Formato PE: cabeçalho DOS e assinatura PE"
+    name: "Reconhecendo um executável do Windows (PE)"

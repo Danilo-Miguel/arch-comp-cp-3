@@ -40,6 +40,18 @@ pelas syscalls, como `r12` e `r13`. Cuidado: além de `rax`, a instrução
 
 **Sem acentos**: `Ola`, `Voce`.
 
+## Crie o arquivo
+
+Escreva o código com um editor de texto. Sugestão: o **nano**.
+
+```bash
+cd ~
+nano nome64.asm
+```
+
+Para salvar: `Ctrl+O` e depois `Enter`. Para sair: `Ctrl+X`. Para continuar
+editando depois, é só rodar `nano nome64.asm` de novo.
+
 ## Monte, ligue e teste
 
 ```bash

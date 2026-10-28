@@ -19,36 +19,26 @@ Se mudar uma resposta, um caso de teste ou o motor de tentativas, rode
 
 ```
 MZ
-0x80
 PE32
-i386
 ```
 
-`od` mostra `80 00 00 00` no offset `0x3C` (e_lfanew = 0x80); `file` diz
-`PE32 executable (console) Intel 80386`; `objdump -f` diz `architecture: i386`.
+`head -c 2` mostra `MZ`; `file` diz `PE32 executable (console) Intel 80386`.
 
-## Exercício 2: `pe-secoes-entry-point` (`exercicio2.txt`)
+## Exercício 2: `pe-entry-point` (`exercicio2.txt`)
 
 ```
-3
-KERNEL32.dll
-0x400000
-0x1040
 0x401040
 ```
 
-Seções `.text`, `.rdata`, `.data`. Importa `GetStdHandle`, `WriteFile` e
-`ExitProcess` da `KERNEL32.dll`. O entry point **não** é o início da `.text`
-(`0x401000`): antes dele há a função `imprime`. Quem chuta `0x1000` erra.
+`objdump -f` mostra `start address 0x00401040` (o check aceita os zeros à
+esquerda). O entry point **não** é o início da `.text` (`0x401000`): antes
+dele há a função `imprime`.
 
-## Exercício 3: `elf-cabecalho-segmentos` (`exercicio3.txt`)
+## Exercício 3: `elf-cabecalho` (`exercicio3.txt`)
 
 ```
 ELF32
-EXEC
 0x8049000
-7
-3
 ```
 
 Os checks aceitam maiúsculas/minúsculas, espaços extras, CRLF e hexadecimal com

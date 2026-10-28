@@ -1,5 +1,5 @@
 #!/usr/bin/exec-suid -- /bin/bash -p
-# Exercício 1: Formato PE, cabeçalho DOS e assinatura PE
+# Exercício 1: Reconhecendo um executável do Windows (PE)
 #
 # Regra de tentativas: o aluno pode errar UMA vez. No segundo erro o exercício
 # fica INVALIDADO e este check nunca mais libera a flag. Arquivo ausente,
@@ -110,13 +110,11 @@ reprovar() {
 abrir_registro
 
 RESP="$HOME_ALUNO/exercicio1.txt"
-ESPERADO_SHA256="b14ed6f71084b8a5b47419a902f37a1e9b94420ea4075d4a7dc350c4720b3626"
+ESPERADO_SHA256="5aa43e487017bd181760db7499ae6915aff61e4a48d5689feb163ad0c1804ada"
 # Uma linha por item: "descrição|regex do formato".
 ITENS=(
-    "assinatura do cabeçalho DOS (2 letras ASCII)|^[a-z]{2}$"
-    "offset do cabeçalho PE, campo e_lfanew (hexadecimal com 0x)|^0x[0-9a-f]+$"
-    "formato: PE32 ou PE32+|^pe32\+?$"
-    "arquitetura informada pelo objdump -f|^[a-z0-9_-]+$"
+    "os 2 primeiros caracteres do arquivo (2 letras)|^[a-z]{2}$"
+    "formato, como o comando file mostra: PE32 ou PE32+|^pe32\+?$"
 )
 
 # minúsculas, sem espaços, sem linhas vazias, hexadecimal sem zeros à esquerda

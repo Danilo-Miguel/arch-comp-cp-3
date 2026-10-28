@@ -58,6 +58,18 @@ print_nome:
 
 **Sem acentos.**
 
+## Crie o arquivo
+
+Escreva o código com um editor de texto. Sugestão: o **nano**.
+
+```bash
+cd ~
+nano ficha32.asm
+```
+
+Para salvar: `Ctrl+O` e depois `Enter`. Para sair: `Ctrl+X`. Para continuar
+editando depois, é só rodar `nano ficha32.asm` de novo.
+
 ## Monte, ligue e teste
 
 ```bash

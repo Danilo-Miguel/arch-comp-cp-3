@@ -1,13 +1,14 @@
 # Estrutura de Binários e Assembly x86 (32 e 64 bits)
 
 Dojo do pwn.college com 10 exercícios, definido em [dojo.yml](./dojo.yml):
-3 de estrutura de binários (PE e ELF) e 7 de Assembly com NASM.
+3 de reconhecimento de binários (PE e ELF), em nível introdutório, e 7 de
+Assembly com NASM. Todos os enunciados sugerem o `nano` para criar os arquivos.
 
 | Módulo | Desafio | Tema |
 |---|---|---|
-| exercicio-1 | `pe-cabecalho` | Formato PE: cabeçalho DOS, `e_lfanew`, PE32 |
-| exercicio-2 | `pe-secoes-entry-point` | Seções, importações, ImageBase, RVA e VA |
-| exercicio-3 | `elf-cabecalho-segmentos` | Cabeçalho ELF, seções e segmentos |
+| exercicio-1 | `pe-cabecalho` | Reconhecer um PE: assinatura `MZ` e `file` |
+| exercicio-2 | `pe-entry-point` | Achar o entry point de um PE com `objdump -f` |
+| exercicio-3 | `elf-cabecalho` | Classe e entry point de um ELF com `readelf -h` |
 | exercicio-4 | `asm-escrita` | `write` e `exit` (32 bits) |
 | exercicio-5 | `asm-leitura-escrita` | Ciclo escrita → `read` → escrita (32 bits) |
 | exercicio-6 | `asm-leitura-escrita-64` | Ciclo de leitura e escrita com `syscall` (64 bits) |

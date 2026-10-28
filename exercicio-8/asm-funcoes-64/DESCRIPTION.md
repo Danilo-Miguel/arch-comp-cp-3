@@ -30,6 +30,18 @@ e no lugar de `int 0x80` se usa **`syscall`**.
 
 **Sem acentos.**
 
+## Crie o arquivo
+
+Escreva o código com um editor de texto. Sugestão: o **nano**.
+
+```bash
+cd ~
+nano funcoes64.asm
+```
+
+Para salvar: `Ctrl+O` e depois `Enter`. Para sair: `Ctrl+X`. Para continuar
+editando depois, é só rodar `nano funcoes64.asm` de novo.
+
 ## Monte, ligue e teste
 
 ```bash
