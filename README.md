@@ -26,9 +26,13 @@ Assembly de 32 bits: `nasm -f elf32`, `ld -m elf_i386`, `int 0x80` com `read`
 Cada `check` permite **um erro**. No segundo erro o exercício fica
 **invalidado** para aquele aluno e o `check` não libera mais a flag.
 
-- O registro fica em `/home/hacker/.tentativas`, uma pasta do **root** criada
-  pelo `check`. O aluno não consegue apagar nem alterar o conteúdo. Se ele
-  renomear a pasta ou criar outra no lugar, o `check` encontra a original.
+- O registro fica em `/home/hacker/.tentativas`, um arquivo por exercício.
+  Cada registro é **assinado** com um segredo derivado do `/flag` (que só o
+  root lê): registro editado ou forjado conta como um erro já gasto.
+- Quando o home permite, a pasta fica com dono diferente do aluno e ele não
+  consegue nem apagá-la; se ele renomear a pasta e criar outra, o `check`
+  encontra a original. Se o home deixa tudo com dono `hacker`, a assinatura
+  continua valendo, mas apagar a pasta inteira zera as tentativas.
 - O dojo usa `allow_privileged: false`. Sem isso, o aluno poderia entrar no
   modo *practice* (com `sudo`) e apagar o registro.
 - Arquivo ausente, resposta fora do formato, `.asm` alterado depois de montar,

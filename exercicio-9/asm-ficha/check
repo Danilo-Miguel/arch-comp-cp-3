@@ -4,8 +4,12 @@
 # Regra de tentativas: o aluno pode errar UMA vez. No segundo erro o exercício
 # fica INVALIDADO e este check nunca mais libera a flag. Arquivo ausente,
 # programa não montado/ligado ou resposta fora do formato NÃO contam como erro.
-# O registro fica em /home/hacker/.tentativas, uma pasta do root: o aluno não
-# consegue apagá-la nem alterar seu conteúdo (o dojo usa allow_privileged: false).
+#
+# O registro fica em /home/hacker/.tentativas, um arquivo por exercício, e cada
+# linha é assinada com um segredo tirado do /flag (que só o root lê): registro
+# editado ou forjado não passa na assinatura e conta como um erro já gasto.
+# Se o home deixar a pasta ficar com outro dono que não o aluno (root ou
+# root_squash), ela também fica protegida contra remoção.
 
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 trap '' INT QUIT TSTP HUP
@@ -27,42 +31,70 @@ como_aluno() {
     setpriv --reuid="$UID_ALUNO" --regid="$GID_ALUNO" --clear-groups -- "$@"
 }
 
-dono_root() {
-    [ -d "$1" ] && [ ! -L "$1" ] && [ "$(stat -c %u -- "$1")" = 0 ]
+# Pasta de verdade (não link) cujo dono não é o aluno.
+protegida() {
+    [ -d "$1" ] && [ ! -L "$1" ] && [ "$(stat -c %u -- "$1")" != "$UID_ALUNO" ]
+}
+
+assinar() {
+    printf '%s|%s\n' "$1" "$(printf '%s\n%s\n%s' "$SEGREDO" "$DESAFIO" "$1" | sha256sum | cut -d' ' -f1)"
+}
+
+# Numa pasta do aluno, quem lê e grava é o aluno (sem risco de link para
+# arquivo do root); na pasta protegida, quem grava é o root.
+ler_registro() {
+    if [ "$PROTEGIDO" = 1 ]; then cat -- "./$DESAFIO"; else como_aluno cat -- "./$DESAFIO"; fi
+}
+
+gravar() {
+    if [ "$PROTEGIDO" = 1 ]; then
+        assinar "$1" > "./$DESAFIO"
+    else
+        assinar "$1" | como_aluno tee -- "./$DESAFIO" > /dev/null
+    fi || falha_interna "gravar"
 }
 
 abrir_registro() {
     command -v setpriv >/dev/null || falha_interna "setpriv ausente"
     UID_ALUNO=$(id -u "$ALUNO") || falha_interna "usuario"
     GID_ALUNO=$(id -g "$ALUNO") || falha_interna "grupo"
+    SEGREDO=$(sha256sum /flag | cut -d' ' -f1)
+    [ -n "$SEGREDO" ] || falha_interna "segredo"
 
-    # Algo que não seja a pasta do root com esse nome foi criado pelo aluno.
-    if [ -e "$ESTADO_DIR" ] || [ -L "$ESTADO_DIR" ]; then
-        dono_root "$ESTADO_DIR" || mv -- "$ESTADO_DIR" "$ESTADO_DIR.descartado.$$" || falha_interna "mv"
+    # Link ou arquivo com o nome da pasta: foi o aluno, tira do caminho.
+    if [ -L "$ESTADO_DIR" ] || { [ -e "$ESTADO_DIR" ] && [ ! -d "$ESTADO_DIR" ]; }; then
+        mv -- "$ESTADO_DIR" "$ESTADO_DIR.descartado.$$" || falha_interna "mv"
     fi
 
-    # O aluno não apaga a pasta do root, mas pode renomeá-la dentro do home.
-    if [ ! -e "$ESTADO_DIR" ]; then
+    # Se uma pasta protegida foi renomeada e trocada por outra, volta a original.
+    if ! protegida "$ESTADO_DIR"; then
         local d
         while IFS= read -r -d '' d; do
-            if [ -f "$d/$ESTADO_MARCA" ]; then
+            if protegida "$d" && [ -f "$d/$ESTADO_MARCA" ]; then
+                [ -e "$ESTADO_DIR" ] && { mv -- "$ESTADO_DIR" "$ESTADO_DIR.descartado.$$" || falha_interna "mv"; }
                 mv -- "$d" "$ESTADO_DIR" || falha_interna "mv"
                 break
             fi
-        done < <(find "$HOME_ALUNO" -mindepth 1 -maxdepth 1 -type d -user root -print0)
+        done < <(find "$HOME_ALUNO" -mindepth 1 -maxdepth 1 -type d ! -user "$UID_ALUNO" -print0)
     fi
 
     if [ ! -e "$ESTADO_DIR" ]; then
         mkdir -m 700 -- "$ESTADO_DIR" || falha_interna "mkdir"
-        chown 0:0 -- "$ESTADO_DIR"
-        : > "$ESTADO_DIR/$ESTADO_MARCA"
+        chown 0:0 -- "$ESTADO_DIR" 2>/dev/null
+        : > "$ESTADO_DIR/$ESTADO_MARCA" 2>/dev/null
     fi
 
     cd -P -- "$ESTADO_DIR" || falha_interna "cd"
-    [ "$(stat -c %u .)" = 0 ] && [ -f "$ESTADO_MARCA" ] || falha_interna "registro"
+    if protegida .; then PROTEGIDO=1; else PROTEGIDO=0; fi
 
-    local situacao
-    situacao=$(cat -- "./$DESAFIO" 2>/dev/null)
+    local linha situacao
+    linha=$(ler_registro 2>/dev/null | head -n 1)
+    situacao=${linha%%|*}
+    if [ -z "$linha" ]; then
+        situacao=""
+    elif [ "$(assinar "$situacao")" != "$linha" ]; then
+        situacao="erros=1"    # registro mexido: conta como um erro já gasto
+    fi
     case "$situacao" in
         aprovado)
             echo "Você já concluiu este exercício. Flag:"
@@ -80,7 +112,7 @@ abrir_registro() {
 }
 
 aprovar() {
-    echo aprovado > "./$DESAFIO" || falha_interna "gravar"
+    gravar aprovado
     echo "Correto! Flag:"
     cat /flag
     exit 0
@@ -90,9 +122,9 @@ aprovar() {
 reprovar() {
     local erros=$((ERROS + 1))
     if [ "$erros" -ge "$MAX_ERROS" ]; then
-        echo invalido > "./$DESAFIO" || falha_interna "gravar"
+        gravar invalido
     else
-        echo "erros=$erros" > "./$DESAFIO" || falha_interna "gravar"
+        gravar "erros=$erros"
     fi
     echo "Resposta incorreta."
     printf '%s\n' "$@"
