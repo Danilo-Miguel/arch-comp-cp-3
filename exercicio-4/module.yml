@@ -1,4 +1,4 @@
-name: "Binários Linux - Exercício 4"
+name: "Assembly x86 - Exercício 4"
 challenges:
-  - id: elf-cabecalho-segmentos
-    name: "Formato ELF: cabeçalho, seções e segmentos"
+  - id: asm-escrita
+    name: "Escrita na tela com write (x86, 32 bits)"

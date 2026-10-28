@@ -1,4 +1,4 @@
-name: "Introdução ao Assembly x86 - Exercício 8"
+name: "Assembly x86-64 - Exercício 8"
 challenges:
-  - id: asm-maior
-    name: "cmp e saltos condicionais (x86, 32 bits)"
+  - id: asm-funcoes-64
+    name: "Funções print_nome, print_idade e print_curso (x86-64, 64 bits)"

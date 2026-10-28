@@ -1,4 +1,4 @@
-name: "Introdução ao Assembly x86 - Exercício 10"
+name: "Assembly x86-64 - Exercício 10"
 challenges:
-  - id: asm-funcao
-    name: "Chamada de função com call/ret (x86, 32 bits)"
+  - id: asm-ficha-64
+    name: "Ficha do aluno com funções de leitura e escrita (x86-64, 64 bits)"

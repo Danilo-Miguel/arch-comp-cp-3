@@ -1,4 +1,4 @@
-name: "Binários Windows - Exercício 3"
+name: "Binários Linux - Exercício 3"
 challenges:
-  - id: pe-entry-point
-    name: "Entry point e carregamento do PE em memória"
+  - id: elf-cabecalho-segmentos
+    name: "Formato ELF: cabeçalho, seções e segmentos"

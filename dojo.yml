@@ -1,5 +1,5 @@
 id: binarios-assembly
-name: "Estrutura de Binários (PE e ELF) e Introdução ao Assembly x86 - Computer Architecture"
+name: "Estrutura de Binários (PE e ELF) e Assembly x86 de 32 e 64 bits - Computer Architecture"
 type: example
 award:
   emoji: 🧩

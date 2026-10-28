@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gera os arquivos `check` do dojo arch-comp-binarios-assembly.
 
-As respostas dos exercícios 1 a 5 ficam só aqui (no gabarito); os checks
+As respostas dos exercícios 1 a 3 ficam só aqui (no gabarito); os checks
 publicados guardam apenas o SHA-256 da resposta normalizada.
 
 Uso: python3 gerar_checks.py
@@ -127,7 +127,7 @@ abrir_registro
 '''
 
 # --------------------------------------------------------------------------
-# Avaliação por arquivo de respostas (exercícios 1 a 5)
+# Avaliação por arquivo de respostas (exercícios 1 a 3)
 # --------------------------------------------------------------------------
 QUESTIONARIO = r'''
 RESP="$HOME_ALUNO/@@ARQUIVO@@"
@@ -194,7 +194,7 @@ fi
 '''
 
 # --------------------------------------------------------------------------
-# Avaliação de programa NASM 32 bits (exercícios 6 a 10)
+# Avaliação de programa NASM de 32 ou 64 bits (exercícios 4 a 10)
 # --------------------------------------------------------------------------
 ASSEMBLY = r'''
 NOME="@@NOME@@"
@@ -208,39 +208,82 @@ pre_requisito() {
     exit 1
 }
 
+# Código-fonte do aluno sem os comentários.
+codigo() {
+    como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null
+}
+
 como_aluno test -f "$ASM" || pre_requisito "Arquivo $NOME.asm não encontrado no seu diretório home."
-como_aluno test -f "$OBJ" || pre_requisito "Objeto $NOME.o não encontrado. Monte com: nasm -f elf32 $NOME.asm -o $NOME.o"
-como_aluno test -f "$EXE" || pre_requisito "Executável $NOME não encontrado. Ligue com: ld -m elf_i386 $NOME.o -o $NOME"
+como_aluno test -f "$OBJ" || pre_requisito "Objeto $NOME.o não encontrado. Monte com: @@MONTAR@@"
+como_aluno test -f "$EXE" || pre_requisito "Executável $NOME não encontrado. Ligue com: @@LIGAR@@"
 como_aluno test -x "$EXE" || pre_requisito "$NOME existe mas não é executável. Rode: chmod +x $NOME"
 [ "$ASM" -nt "$OBJ" ] && pre_requisito "Você alterou $NOME.asm depois de montar. Monte e ligue de novo antes do check."
-[ "$OBJ" -nt "$EXE" ] && pre_requisito "Você montou $NOME.o depois de ligar. Ligue de novo: ld -m elf_i386 $NOME.o -o $NOME"
-como_aluno file -b -- "$OBJ" | grep -q "ELF 32-bit LSB relocatable" ||
-    pre_requisito "$NOME.o não é um objeto ELF 32 bits. Use: nasm -f elf32 $NOME.asm -o $NOME.o"
-como_aluno file -b -- "$EXE" | grep -q "ELF 32-bit LSB executable" ||
-    pre_requisito "$NOME não é um executável ELF 32 bits. Use: ld -m elf_i386 $NOME.o -o $NOME"
+[ "$OBJ" -nt "$EXE" ] && pre_requisito "Você montou $NOME.o depois de ligar. Ligue de novo: @@LIGAR@@"
+como_aluno file -b -- "$OBJ" | grep -q "ELF @@BITS@@-bit LSB relocatable" ||
+    pre_requisito "$NOME.o não é um objeto ELF de @@BITS@@ bits. Use: @@MONTAR@@"
+como_aluno file -b -- "$EXE" | grep -q "ELF @@BITS@@-bit LSB executable" ||
+    pre_requisito "$NOME não é um executável ELF de @@BITS@@ bits. Use: @@LIGAR@@"
+codigo | grep -Eiq '^[[:space:]]*@@SYSCALL@@[[:space:]]*$' ||
+    pre_requisito "Em @@BITS@@ bits as syscalls são feitas com '@@SYSCALL_TXT@@', que não aparece no $NOME.asm."
+codigo | grep -Eiq '^[[:space:]]*@@SYSCALL_ERRADA@@[[:space:]]*$' &&
+    pre_requisito "O $NOME.asm usa '@@ERRADA_TXT@@', mas este exercício é de @@BITS@@ bits: use '@@SYSCALL_TXT@@'."
+
+# $@ = nomes das funções: cada uma precisa do rótulo, de um call e de um ret.
+exigir_funcoes() {
+    local f
+    for f in "$@"; do
+        codigo | grep -Eq "^[[:space:]]*$f:" ||
+            pre_requisito "Não encontrei o rótulo da função $f no $NOME.asm."
+        codigo | grep -Eiq "^[[:space:]]*call[[:space:]]+$f[[:space:]]*$" ||
+            pre_requisito "A função $f precisa ser chamada com call (call $f)."
+    done
+    [ "$(codigo | grep -Eic '^[[:space:]]*ret[[:space:]]*$')" -ge $# ] ||
+        pre_requisito "Cada uma das $# funções ($*) precisa terminar com ret."
+}
 @@PRE@@
-# Roda o programa do aluno (como aluno) e imprime o código de saída.
+# Roda o programa do aluno (como aluno). Cada argumento é uma linha digitada,
+# enviada com uma pausa, como alguém no teclado. Define SAIDA e CODIGO.
 executar() {
-    printf '%s' "$1" | timeout 5 setpriv --reuid="$UID_ALUNO" --regid="$GID_ALUNO" --clear-groups -- "$EXE" >/dev/null 2>&1
-    echo $?
+    local bruto
+    bruto=$(
+        { for linha in "$@"; do printf '%s\n' "$linha"; sleep 0.3; done; } 2>/dev/null |
+            timeout 5 setpriv --reuid="$UID_ALUNO" --regid="$GID_ALUNO" --clear-groups -- "$EXE" 2>/dev/null |
+            head -c 4096 | cat -v
+        echo "#${PIPESTATUS[1]}"
+    )
+    CODIGO=${bruto##*#}
+    SAIDA=${bruto%#*}
 }
 
 descrever_codigo() {
     case "$1" in
         124) echo "o programa travou (não encerrou em 5 s; faltou a syscall exit?)" ;;
-        139) echo "o programa caiu com segmentation fault" ;;
-        *) echo "código de saída $1" ;;
+        139) echo "o programa caiu com segmentation fault (faltou o exit ou um ret?)" ;;
+        *) echo "o programa saiu com código $1" ;;
     esac
 }
 
-@@CASOS@@
+# $1 = descrição da entrada. Exige exit(0).
+conferir_codigo() {
+    [ "$CODIGO" = 0 ] ||
+        reprovar "Entrada $1: era esperado exit(0), mas $(descrever_codigo "$CODIGO")."
+}
 
-for i in "${!ENTRADAS[@]}"; do
-    obtido=$(executar "${ENTRADAS[$i]}")
-    if [ "$obtido" != "${ESPERADOS[$i]}" ]; then
-        reprovar "Entrada '${ENTRADAS[$i]}': esperado código de saída ${ESPERADOS[$i]}, obtido: $(descrever_codigo "$obtido")."
-    fi
-done
+# $1 = descrição da entrada, $2 = saída esperada, exatamente.
+conferir() {
+    conferir_codigo "$1"
+    [ "$SAIDA" = "$2" ] ||
+        reprovar "Entrada $1: a saída do programa está diferente." \
+            "----- esperado -----" "$2" "----- obtido -------" "$SAIDA" "--------------------"
+}
+
+NOMES=(Ana Bruno Carla Diego Eduarda Felipe Gabriela Henrique Isabela Joao
+       Larissa Mateus Natalia Otavio Paula Rafael Sofia Thiago Vitoria
+       "Maria Clara" "Pedro Henrique" "Ana Beatriz" "Lucas Oliveira")
+CURSOS=(ADS "Ciencia da Computacao" "Engenharia de Software" "Sistemas de Informacao"
+        "Defesa Cibernetica" "Engenharia de Computacao" "Inteligencia Artificial")
+
+@@CASOS@@
 
 aprovar
 '''
@@ -259,95 +302,109 @@ QUESTIONARIOS = [
          ("formato: PE32 ou PE32+", r"^pe32\+?$", "pe32"),
          ("arquitetura informada pelo objdump -f", r"^[a-z0-9_-]+$", "i386"),
      ]),
-    ("exercicio-2/pe-secoes-importacao", "pe-secoes-importacao",
-     "Exercício 2: Seções e tabela de importação do PE", "exercicio2.txt", [
+    ("exercicio-2/pe-secoes-entry-point", "pe-secoes-entry-point",
+     "Exercício 2: Seções, importações e entry point do PE", "exercicio2.txt", [
          ("quantidade de seções (decimal)", r"^[0-9]+$", "3"),
-         ("nome da seção que contém o código executável", r"^\.[a-z0-9_]+$", ".text"),
          ("nome da DLL importada (com .dll)", r"^[a-z0-9_]+\.dll$", "kernel32.dll"),
-         ("função importada que encerra o processo", r"^[a-z0-9_]+$", "exitprocess"),
-     ]),
-    ("exercicio-3/pe-entry-point", "pe-entry-point",
-     "Exercício 3: Entry point e carregamento do PE em memória", "exercicio3.txt", [
          ("ImageBase (hexadecimal com 0x)", r"^0x[0-9a-f]+$", "0x400000"),
          ("AddressOfEntryPoint, a RVA do entry point (hexadecimal com 0x)", r"^0x[0-9a-f]+$", "0x1040"),
          ("endereço virtual (VA) do entry point na memória (hexadecimal com 0x)", r"^0x[0-9a-f]+$", "0x401040"),
-         ("endereço virtual (VA) onde a seção .data é carregada (hexadecimal com 0x)", r"^0x[0-9a-f]+$", "0x403000"),
      ]),
-    ("exercicio-4/elf-cabecalho-segmentos", "elf-cabecalho-segmentos",
-     "Exercício 4: Formato ELF, cabeçalho, seções e segmentos", "exercicio4.txt", [
+    ("exercicio-3/elf-cabecalho-segmentos", "elf-cabecalho-segmentos",
+     "Exercício 3: Formato ELF, cabeçalho, seções e segmentos", "exercicio3.txt", [
          ("classe: ELF32 ou ELF64", r"^elf(32|64)$", "elf32"),
          ("tipo do arquivo (campo Type, só a sigla: EXEC, DYN ou REL)", r"^[a-z]+$", "exec"),
          ("endereço do entry point (hexadecimal com 0x)", r"^0x[0-9a-f]+$", "0x8049000"),
          ("quantidade de section headers (decimal)", r"^[0-9]+$", "7"),
          ("quantidade de segmentos do tipo LOAD (decimal)", r"^[0-9]+$", "3"),
      ]),
-    ("exercicio-5/elf-simbolos-relocacao", "elf-simbolos-relocacao",
-     "Exercício 5: Símbolos e tabela de relocação do ELF", "exercicio5.txt", [
-         ("tipo do arquivo alvo.o (campo Type, só a sigla: EXEC, DYN ou REL)", r"^[a-z]+$", "rel"),
-         ("quantidade de entradas de relocação em .rel.text (decimal)", r"^[0-9]+$", "3"),
-         ("tipo das relocações (coluna Type do readelf -r)", r"^r_[a-z0-9_]+$", "r_386_32"),
-         ("nome do símbolo GLOBAL definido na seção .data", r"^[a-z_][a-z0-9_]*$", "contador"),
-     ]),
 ]
 
-PRE_TRADUCAO = r'''
-como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -q '%' &&
-    pre_requisito "$NOME.asm ainda tem registradores com % (sintaxe AT&T). Traduza para a sintaxe Intel do NASM."
-
+CASOS_OLA = r'''
+executar
+conferir "(nenhuma)" $'Ola, FIAP!\nEstou aprendendo Assembly x86.\n'
 '''
 
-PRE_FUNCAO = r'''
-como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -Eq '^[[:space:]]*ler_digito:' ||
-    pre_requisito "Não encontrei o rótulo ler_digito no $NOME.asm."
-[ "$(como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -Eic '^[[:space:]]*call[[:space:]]+ler_digito')" -ge 3 ] ||
-    pre_requisito "O programa deve chamar ler_digito com call três vezes."
-como_aluno sed 's/;.*//' -- "$ASM" 2>/dev/null | grep -Eiq '^[[:space:]]*ret[[:space:]]*$' ||
-    pre_requisito "A função ler_digito deve terminar com ret."
-'''
-
-# (pasta, desafio, título, nome, pré-requisitos extras, geração dos casos)
-PROGRAMAS = [
-    ("exercicio-6/asm-ascii", "asm-ascii",
-     "Exercício 6: mov, leitura (read) e encerramento (exit)", "ascii32", "", r'''
-CARACTERES=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
-ENTRADAS=("A")
-for _ in 1 2 3; do
-    ENTRADAS+=("${CARACTERES:RANDOM % ${#CARACTERES}:1}")
+CASOS_NOME32 = r'''
+for nome in Ana "${NOMES[RANDOM % ${#NOMES[@]}]}" "${NOMES[RANDOM % ${#NOMES[@]}]}"; do
+    executar "$nome"
+    conferir "'$nome'" "Qual o seu nome? Ola, $nome"$'\n'
 done
-ESPERADOS=()
-for e in "${ENTRADAS[@]}"; do
-    ESPERADOS+=("$(printf '%d' "'$e")")
-done'''),
-    ("exercicio-7/asm-soma", "asm-soma",
-     "Exercício 7: add e sub com dígitos lidos do teclado", "soma32", "", r'''
-ENTRADAS=("00" "99" "$((RANDOM % 10))$((RANDOM % 10))" "$((RANDOM % 10))$((RANDOM % 10))")
-ESPERADOS=()
-for e in "${ENTRADAS[@]}"; do
-    ESPERADOS+=("$((${e:0:1} + ${e:1:1}))")
-done'''),
-    ("exercicio-8/asm-maior", "asm-maior",
-     "Exercício 8: cmp e saltos condicionais", "maior32", "", r'''
-ENTRADAS=("27" "72" "55" "$((RANDOM % 10))$((RANDOM % 10))" "$((RANDOM % 10))$((RANDOM % 10))")
-ESPERADOS=()
-for e in "${ENTRADAS[@]}"; do
-    a=${e:0:1}; b=${e:1:1}
-    ESPERADOS+=("$(( a > b ? a : b ))")
-done'''),
-    ("exercicio-9/asm-traducao", "asm-traducao",
-     "Exercício 9: Sintaxe Intel vs AT&T", "traducao32", PRE_TRADUCAO, r'''
-ENTRADAS=("0" "9" "$((RANDOM % 10))" "$((RANDOM % 10))")
-ESPERADOS=()
-for e in "${ENTRADAS[@]}"; do
-    ESPERADOS+=("$((2 * e + 10))")
-done'''),
-    ("exercicio-10/asm-funcao", "asm-funcao",
-     "Exercício 10: Chamada de função com call/ret", "funcao32", PRE_FUNCAO, r'''
-ENTRADAS=("000" "999" "$((RANDOM % 10))$((RANDOM % 10))$((RANDOM % 10))" "$((RANDOM % 10))$((RANDOM % 10))$((RANDOM % 10))")
-ESPERADOS=()
-for e in "${ENTRADAS[@]}"; do
-    ESPERADOS+=("$((${e:0:1} + ${e:1:1} + ${e:2:1}))")
-done'''),
+'''
+
+CASOS_NOME64 = r'''
+for i in 1 2 3; do
+    nome=${NOMES[RANDOM % ${#NOMES[@]}]}
+    curso=${CURSOS[RANDOM % ${#CURSOS[@]}]}
+    [ "$i" = 1 ] && nome=Ana curso=ADS
+    executar "$nome" "$curso"
+    conferir "'$nome' e '$curso'" \
+        "Digite seu nome: Digite seu curso: Ola, $nome"$'\n'"Voce estuda $curso"$'\n'
+done
+'''
+
+CASOS_FUNCOES = r'''
+executar
+conferir_codigo "(nenhuma)"
+FORMATO=$'^Nome: [^\n]+\nIdade: [0-9]{1,3}\nCurso: [^\n]+\n$'
+[[ $SAIDA =~ $FORMATO ]] ||
+    reprovar "A saída precisa ter exatamente 3 linhas, nesta ordem:" \
+        "Nome: <seu nome>" "Idade: <sua idade>" "Curso: <seu curso>" \
+        "----- obtido -------" "$SAIDA" "--------------------"
+'''
+
+CASOS_FICHA32 = r'''
+for i in 1 2 3; do
+    nome=${NOMES[RANDOM % ${#NOMES[@]}]}
+    curso=${CURSOS[RANDOM % ${#CURSOS[@]}]}
+    [ "$i" = 1 ] && nome=Ana curso=ADS
+    executar "$nome" "$curso"
+    conferir "'$nome' e '$curso'" \
+        "Digite seu nome: Digite seu curso: Nome: $nome"$'\n'"Curso: $curso"$'\n'
+done
+'''
+
+CASOS_FICHA64 = r'''
+for i in 1 2 3; do
+    nome=${NOMES[RANDOM % ${#NOMES[@]}]}
+    idade=$((17 + RANDOM % 43))
+    curso=${CURSOS[RANDOM % ${#CURSOS[@]}]}
+    [ "$i" = 1 ] && nome=Ana idade=20 curso=ADS
+    executar "$nome" "$idade" "$curso"
+    conferir "'$nome', '$idade' e '$curso'" \
+        "Digite seu nome: Digite sua idade: Digite seu curso: Nome: $nome"$'\n'"Idade: $idade"$'\n'"Curso: $curso"$'\n'
+done
+'''
+
+PRINTS = "\nexigir_funcoes print_nome print_idade print_curso\n"
+
+# (pasta, desafio, título, nome, bits, pré-requisitos extras, casos de teste)
+PROGRAMAS = [
+    ("exercicio-4/asm-escrita", "asm-escrita",
+     "Exercício 4: Escrita na tela com write (32 bits)", "ola32", 32, "", CASOS_OLA),
+    ("exercicio-5/asm-leitura-escrita", "asm-leitura-escrita",
+     "Exercício 5: Ciclo de leitura e escrita (32 bits)", "nome32", 32, "", CASOS_NOME32),
+    ("exercicio-6/asm-leitura-escrita-64", "asm-leitura-escrita-64",
+     "Exercício 6: Ciclo de leitura e escrita (64 bits)", "nome64", 64, "", CASOS_NOME64),
+    ("exercicio-7/asm-funcoes", "asm-funcoes",
+     "Exercício 7: Funções print_nome, print_idade e print_curso (32 bits)", "funcoes32", 32,
+     PRINTS, CASOS_FUNCOES),
+    ("exercicio-8/asm-funcoes-64", "asm-funcoes-64",
+     "Exercício 8: Funções print_nome, print_idade e print_curso (64 bits)", "funcoes64", 64,
+     PRINTS, CASOS_FUNCOES),
+    ("exercicio-9/asm-ficha", "asm-ficha",
+     "Exercício 9: Ficha do aluno com funções de leitura e escrita (32 bits)", "ficha32", 32,
+     "\nexigir_funcoes ler_nome ler_curso print_nome print_curso\n", CASOS_FICHA32),
+    ("exercicio-10/asm-ficha-64", "asm-ficha-64",
+     "Exercício 10: Ficha do aluno com funções de leitura e escrita (64 bits)", "ficha64", 64,
+     "\nexigir_funcoes ler_nome ler_idade ler_curso print_nome print_idade print_curso\n",
+     CASOS_FICHA64),
 ]
+
+FERRAMENTAS = {
+    32: ("nasm -f elf32 {n}.asm -o {n}.o", "ld -m elf_i386 {n}.o -o {n}", "int 0x80", "syscall"),
+    64: ("nasm -f elf64 {n}.asm -o {n}.o", "ld {n}.o -o {n}", "syscall", "int 0x80"),
+}
 
 
 def escrever(pasta, conteudo):
@@ -368,8 +425,16 @@ for pasta, desafio, titulo, arquivo, itens in QUESTIONARIOS:
              .replace("@@ITENS@@", linhas))
     escrever(pasta, motor(desafio, titulo) + corpo)
 
-for pasta, desafio, titulo, nome, pre, casos in PROGRAMAS:
+for pasta, desafio, titulo, nome, bits, pre, casos in PROGRAMAS:
+    montar, ligar, instrucao, errada = FERRAMENTAS[bits]
     corpo = (ASSEMBLY.replace("@@NOME@@", nome)
+             .replace("@@MONTAR@@", montar.format(n=nome))
+             .replace("@@LIGAR@@", ligar.format(n=nome))
+             .replace("@@BITS@@", str(bits))
+             .replace("@@SYSCALL_TXT@@", instrucao)
+             .replace("@@ERRADA_TXT@@", errada)
+             .replace("@@SYSCALL@@", instrucao.replace(" ", "[[:space:]]+"))
+             .replace("@@SYSCALL_ERRADA@@", errada.replace(" ", "[[:space:]]+"))
              .replace("@@PRE@@", pre)
              .replace("@@CASOS@@", casos.strip("\n")))
     escrever(pasta, motor(desafio, titulo) + corpo)

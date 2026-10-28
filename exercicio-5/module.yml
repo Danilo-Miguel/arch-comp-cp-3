@@ -1,4 +1,4 @@
-name: "Binários Linux - Exercício 5"
+name: "Assembly x86 - Exercício 5"
 challenges:
-  - id: elf-simbolos-relocacao
-    name: "Símbolos e tabela de relocação do ELF"
+  - id: asm-leitura-escrita
+    name: "Ciclo de leitura e escrita (x86, 32 bits)"

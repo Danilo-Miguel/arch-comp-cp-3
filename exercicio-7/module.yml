@@ -1,4 +1,4 @@
-name: "Introdução ao Assembly x86 - Exercício 7"
+name: "Assembly x86 - Exercício 7"
 challenges:
-  - id: asm-soma
-    name: "add e sub com dígitos lidos do teclado (x86, 32 bits)"
+  - id: asm-funcoes
+    name: "Funções print_nome, print_idade e print_curso (x86, 32 bits)"

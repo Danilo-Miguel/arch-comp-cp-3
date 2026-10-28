@@ -1,4 +1,4 @@
-name: "Introdução ao Assembly x86 - Exercício 6"
+name: "Assembly x86-64 - Exercício 6"
 challenges:
-  - id: asm-ascii
-    name: "mov, leitura (read) e encerramento (exit) em x86 (32 bits)"
+  - id: asm-leitura-escrita-64
+    name: "Ciclo de leitura e escrita (x86-64, 64 bits)"
