@@ -27,7 +27,7 @@ MOTOR = r'''#!/usr/bin/exec-suid -- /bin/bash -p
 # Se o home deixar a pasta ficar com outro dono que não o aluno (root ou
 # root_squash), ela também fica protegida contra remoção.
 
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/run/dojo/bin
 trap '' INT QUIT TSTP HUP
 
 DESAFIO="@@DESAFIO@@"
@@ -251,10 +251,17 @@ como_aluno test -f "$EXE" || pre_requisito "Executável $NOME não encontrado. L
 como_aluno test -x "$EXE" || pre_requisito "$NOME existe mas não é executável. Rode: chmod +x $NOME"
 [ "$ASM" -nt "$OBJ" ] && pre_requisito "Você alterou $NOME.asm depois de montar. Monte e ligue de novo antes do check."
 [ "$OBJ" -nt "$EXE" ] && pre_requisito "Você montou $NOME.o depois de ligar. Ligue de novo: @@LIGAR@@"
-como_aluno file -b -- "$OBJ" | grep -q "ELF @@BITS@@-bit LSB relocatable" ||
-    pre_requisito "$NOME.o não é um objeto ELF de @@BITS@@ bits. Use: @@MONTAR@@"
-como_aluno file -b -- "$EXE" | grep -q "ELF @@BITS@@-bit LSB executable" ||
-    pre_requisito "$NOME não é um executável ELF de @@BITS@@ bits. Use: @@LIGAR@@"
+# Lê o cabeçalho ELF direto (sem o comando file, que pode não estar no PATH):
+# bytes 0-3 = 7f 'E' 'L' 'F', byte 4 = classe (1 = 32 bits, 2 = 64 bits),
+# bytes 16-17 = tipo (1 = objeto relocável, 2 = executável).
+elf_tipo() {  # $1 = arquivo, $2 = tipo esperado
+    local b
+    b=($(como_aluno od -An -tu1 -N18 -- "$1" 2>/dev/null))
+    [ "${b[0]}/${b[1]}/${b[2]}/${b[3]}" = "127/69/76/70" ] && [ "${b[4]}" = @@CLASSE@@ ] &&
+        [ "${b[16]}" = "$2" ] && [ "${b[17]}" = 0 ]
+}
+elf_tipo "$OBJ" 1 || pre_requisito "$NOME.o não é um objeto ELF de @@BITS@@ bits. Use: @@MONTAR@@"
+elf_tipo "$EXE" 2 || pre_requisito "$NOME não é um executável ELF de @@BITS@@ bits. Use: @@LIGAR@@"
 codigo | grep -Eiq '^[[:space:]]*@@SYSCALL@@[[:space:]]*$' ||
     pre_requisito "Em @@BITS@@ bits as syscalls são feitas com '@@SYSCALL_TXT@@', que não aparece no $NOME.asm."
 codigo | grep -Eiq '^[[:space:]]*@@SYSCALL_ERRADA@@[[:space:]]*$' &&
@@ -454,6 +461,7 @@ for pasta, desafio, titulo, nome, bits, pre, casos in PROGRAMAS:
              .replace("@@MONTAR@@", montar.format(n=nome))
              .replace("@@LIGAR@@", ligar.format(n=nome))
              .replace("@@BITS@@", str(bits))
+             .replace("@@CLASSE@@", "1" if bits == 32 else "2")
              .replace("@@SYSCALL_TXT@@", instrucao)
              .replace("@@ERRADA_TXT@@", errada)
              .replace("@@SYSCALL@@", instrucao.replace(" ", "[[:space:]]+"))

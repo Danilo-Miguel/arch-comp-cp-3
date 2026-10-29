@@ -11,7 +11,7 @@
 # Se o home deixar a pasta ficar com outro dono que não o aluno (root ou
 # root_squash), ela também fica protegida contra remoção.
 
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/run/dojo/bin
 trap '' INT QUIT TSTP HUP
 
 DESAFIO="pe-cabecalho"
