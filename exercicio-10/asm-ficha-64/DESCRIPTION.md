@@ -35,9 +35,15 @@ A idade é lida e escrita **como texto**, igual ao nome: não precisa converter
 para número.
 
 Como no exercício anterior, guarde cada tamanho lido numa variável da `.bss`.
-Em 64 bits o `rax` tem 8 bytes, então reserve com `resq 1`:
+Em 64 bits o `rax` tem 8 bytes, então reserve com `resq 1`.
+
+Coloque também **`default rel` na primeira linha** do arquivo. Em 64 bits, o
+acesso a variáveis com colchetes (`[tam_nome]`) deve ser relativo ao `rip`; sem
+essa linha o NASM mostra o aviso `implicit DEFAULT ABS is deprecated`.
 
 ```nasm
+default rel
+
 section .bss
     nome resb 32
     tam_nome resq 1

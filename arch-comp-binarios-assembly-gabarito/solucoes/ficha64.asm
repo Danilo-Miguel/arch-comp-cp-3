@@ -1,3 +1,5 @@
+default rel                ; [variavel] relativo ao rip (padrao em 64 bits)
+
 section .data
     pede_nome db "Digite seu nome: "
     tam_pede_nome equ $ - pede_nome
